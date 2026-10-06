@@ -7,8 +7,8 @@ import (
 )
 
 type Library struct {
-	Books   []*domain.Book
-	Readers []*domain.Reader
+	books   []*domain.Book
+	readers []*domain.Reader
 
 	lastBookID   int
 	lastReaderID int
@@ -16,13 +16,16 @@ type Library struct {
 
 func New() *Library {
 	return &Library{
-		Books:   []*domain.Book{},
-		Readers: []*domain.Reader{},
+		books:   []*domain.Book{},
+		readers: []*domain.Reader{},
 	}
 }
 
 func (lib *Library) AddBook(title, author string, year int) (*domain.Book, error) {
-	for _, b := range lib.Books {
+	if err := validateBook(title, author); err != nil {
+		return nil, err
+	}
+	for _, b := range lib.books {
 		if b.Title == title && b.Author == author {
 			return nil, fmt.Errorf("книга '%s' автора '%s' уже есть в библиотеке", title, author)
 		}
@@ -34,12 +37,12 @@ func (lib *Library) AddBook(title, author string, year int) (*domain.Book, error
 		Author: author,
 		Year:   year,
 	}
-	lib.Books = append(lib.Books, book)
+	lib.books = append(lib.books, book)
 	return book, nil
 }
 
 func (lib *Library) AddReader(firstName, lastName string) (*domain.Reader, error) {
-	for _, r := range lib.Readers {
+	for _, r := range lib.readers {
 		if r.FirstName == firstName && r.LastName == lastName {
 			return nil, fmt.Errorf("читатель '%s %s' уже зарегистрирован", firstName, lastName)
 		}
@@ -51,12 +54,12 @@ func (lib *Library) AddReader(firstName, lastName string) (*domain.Reader, error
 		LastName:  lastName,
 		IsActive:  true,
 	}
-	lib.Readers = append(lib.Readers, reader)
+	lib.readers = append(lib.readers, reader)
 	return reader, nil
 }
 
 func (lib *Library) FindBookByID(id int) (*domain.Book, error) {
-	for _, book := range lib.Books {
+	for _, book := range lib.books {
 		if book.ID == id {
 			return book, nil
 		}
@@ -65,7 +68,7 @@ func (lib *Library) FindBookByID(id int) (*domain.Book, error) {
 }
 
 func (lib *Library) FindReaderByID(id int) (*domain.Reader, error) {
-	for _, reader := range lib.Readers {
+	for _, reader := range lib.readers {
 		if reader.ID == id {
 			return reader, nil
 		}
@@ -97,5 +100,17 @@ func (lib *Library) ReturnBook(bookID int) error {
 }
 
 func (lib *Library) GetAllBooks() []*domain.Book {
-	return lib.Books
+	return lib.books
+}
+
+// validateBook — вспомогательная функция, используется только внутри пакета.
+// Имя с маленькой буквы — правильно.
+func validateBook(title, author string) error {
+	if title == "" {
+		return fmt.Errorf("название книги не может быть пустым")
+	}
+	if author == "" {
+		return fmt.Errorf("автор книги не может быть пустым")
+	}
+	return nil
 }
