@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"library-app/domain"
+	"library-app/storage"
 )
 
 type Library struct {
@@ -14,6 +15,7 @@ type Library struct {
 	lastReaderID int
 }
 
+// New — фабричная функция Возвращает пустую библиотеку с не-nil слайсами
 func New() *Library {
 	return &Library{
 		books:   []*domain.Book{},
@@ -103,8 +105,30 @@ func (lib *Library) GetAllBooks() []*domain.Book {
 	return lib.books
 }
 
-// validateBook — вспомогательная функция, используется только внутри пакета.
-// Имя с маленькой буквы — правильно.
+// SaveToCSV — обертка над storage.SaveBooksToCSV
+func (lib *Library) SaveToCSV(filename string) error {
+	return storage.SaveBooksToCSV(filename, lib.books)
+}
+
+// LoadFromCSV — читает книги из файла и заменяет ими текущий список
+func (lib *Library) LoadFromCSV(filename string) error {
+	books, err := storage.LoadBooksFromCSV(filename)
+	if err != nil {
+		return err
+	}
+	lib.books = books
+
+	maxID := 0
+	for _, b := range books {
+		if b.ID > maxID {
+			maxID = b.ID
+		}
+	}
+	lib.lastBookID = maxID
+	return nil
+}
+
+// validateBook — вспомогательная функция, используется только внутри пакета
 func validateBook(title, author string) error {
 	if title == "" {
 		return fmt.Errorf("название книги не может быть пустым")

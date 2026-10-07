@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"library-app/config"
 	"library-app/library"
@@ -9,6 +10,69 @@ import (
 )
 
 func main() {
+	// === Разбор аргументов командной строки ===
+	if len(os.Args) >= 2 {
+		command := os.Args[1]
+
+		switch command {
+		case "save":
+			if len(os.Args) < 3 {
+				fmt.Println("Использование: save <имя_файла.csv>")
+				os.Exit(1)
+			}
+			handleSave(os.Args[2])
+			return
+
+		case "load":
+			if len(os.Args) < 3 {
+				fmt.Println("Использование: load <имя_файла.csv>")
+				os.Exit(1)
+			}
+			handleLoad(os.Args[2])
+			return
+
+		default:
+			fmt.Printf("Неизвестная команда: %s\n", command)
+			fmt.Println("Доступные команды: save <файл>, load <файл>")
+			os.Exit(1)
+		}
+	}
+	demo()
+}
+
+func handleSave(filename string) {
+	lib := library.New()
+
+	// Наполним демо-данными (в реальном проекте — загрузили бы из хранилища).
+	if _, err := lib.AddBook("Война и мир", "Л. Толстой", 1869); err != nil {
+		fmt.Println("Ошибка:", err)
+		return
+	}
+	if _, err := lib.AddBook("Преступление и наказание", "Ф. Достоевский", 1866); err != nil {
+		fmt.Println("Ошибка:", err)
+		return
+	}
+
+	if err := lib.SaveToCSV(filename); err != nil {
+		fmt.Println("Ошибка сохранения:", err)
+		return
+	}
+	fmt.Printf("Сохранено книг: %d → %s\n", len(lib.GetAllBooks()), filename)
+}
+
+func handleLoad(filename string) {
+	lib := library.New()
+	if err := lib.LoadFromCSV(filename); err != nil {
+		fmt.Println("Ошибка загрузки:", err)
+		return
+	}
+	fmt.Printf("Загружено книг: %d из %s\n", len(lib.GetAllBooks()), filename)
+	for _, b := range lib.GetAllBooks() {
+		fmt.Println(" -", b)
+	}
+}
+
+func demo() {
 	// === config ===
 	cfgWithPort := map[string]string{"PORT": "8080"}
 	cfgWithoutPort := map[string]string{"HOST": "localhost"}
@@ -64,6 +128,7 @@ func main() {
 
 	fmt.Println("--- Сценарии использования ---")
 
+	// === Сценарий 1: успешная выдача ===
 	fmt.Println("\n[1] Успешная выдача книги")
 	if err := myLibrary.IssueBookToReader(book1.ID, reader1.ID); err != nil {
 		fmt.Println("Ошибка:", err)
@@ -71,16 +136,23 @@ func main() {
 		fmt.Printf("Книга %s выдана читателю %s\n", book1, reader1)
 	}
 
+	// === Сценарий 2: повторная выдача ===
 	fmt.Println("\n[2] Попытка выдать уже выданную книгу")
 	if err := myLibrary.IssueBookToReader(book1.ID, reader2.ID); err != nil {
 		fmt.Println("Ожидаемая ошибка:", err)
+	} else {
+		fmt.Println("Неожиданно: книга выдана повторно")
 	}
 
+	// === Сценарий 3: несуществующий читатель ===
 	fmt.Println("\n[3] Попытка выдать книгу несуществующему читателю")
 	if err := myLibrary.IssueBookToReader(book2.ID, 999); err != nil {
 		fmt.Println("Ожидаемая ошибка:", err)
+	} else {
+		fmt.Println("Неожиданно: книга выдана")
 	}
 
+	// === Сценарий 4: успешный возврат ===
 	fmt.Println("\n[4] Успешный возврат книги")
 	if err := myLibrary.ReturnBook(book1.ID); err != nil {
 		fmt.Println("Ошибка:", err)
@@ -88,11 +160,15 @@ func main() {
 		fmt.Printf("Книга %s возвращена в библиотеку\n", book1)
 	}
 
+	// === Сценарий 5: повторный возврат ===
 	fmt.Println("\n[5] Попытка вернуть книгу, которая уже в библиотеке")
 	if err := myLibrary.ReturnBook(book1.ID); err != nil {
 		fmt.Println("Ожидаемая ошибка:", err)
+	} else {
+		fmt.Println("Неожиданно: книга возвращена повторно")
 	}
 
+	// === notifications ===
 	fmt.Println("\n--- Уведомления ---")
 	var emailNotifier notifications.Notifier = &notifications.EmailNotifier{Email: "ivan@example.com"}
 	if err := emailNotifier.Notify(reader1.String(), "Книга выдана"); err != nil {
@@ -104,6 +180,7 @@ func main() {
 		fmt.Println("Ошибка уведомления:", err)
 	}
 
+	// === domain ===
 	fmt.Println("\n--- Каталог ---")
 	for _, b := range myLibrary.GetAllBooks() {
 		fmt.Println(" -", b)
