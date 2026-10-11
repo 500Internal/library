@@ -9,7 +9,3 @@ func GetPort(cfg map[string]string) (string, error) {
 	}
 	return port, nil
 }
-
-func validateKey(key string) bool {
-	return key != ""
-}

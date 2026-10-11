@@ -103,6 +103,22 @@ func (lib *Library) GetAllBooks() []*domain.Book {
 	return lib.Books
 }
 
+func (lib *Library) GetAllReaders() []*domain.Reader {
+	return lib.Readers
+}
+
+// SetBooks / SetReaders — сеттеры для загрузки из storage.
+func (lib *Library) SetBooks(books []*domain.Book) {
+	lib.Books = books
+	lib.UpdateIDs()
+}
+
+func (lib *Library) SetReaders(readers []*domain.Reader) {
+	lib.Readers = readers
+	lib.UpdateIDs()
+}
+
+// UpdateIDs — пересчитывает lastBookID и lastReaderID после загрузки.
 func (lib *Library) UpdateIDs() {
 	maxBookID := 0
 	for _, book := range lib.Books {
