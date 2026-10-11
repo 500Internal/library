@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -9,7 +10,40 @@ import (
 	"library-app/domain"
 )
 
-// SaveBooksToCSV сохраняет книги в CSV-файл
+type storageData struct {
+	Books   []*domain.Book   `json:"books"`
+	Readers []*domain.Reader `json:"readers"`
+}
+
+func SaveLibraryToJSON(filePath string, books []*domain.Book, readers []*domain.Reader) error {
+	data := storageData{
+		Books:   books,
+		Readers: readers,
+	}
+
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return fmt.Errorf("ошибка сериализации JSON: %w", err)
+	}
+
+	return os.WriteFile(filePath, jsonData, 0644)
+}
+
+func LoadLibraryFromJSON(filePath string) ([]*domain.Book, []*domain.Reader, error) {
+	jsonData, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("не удалось прочитать файл '%s': %w", filePath, err)
+	}
+
+	var data storageData
+
+	if err := json.Unmarshal(jsonData, &data); err != nil {
+		return nil, nil, fmt.Errorf("ошибка десериализации JSON: %w", err)
+	}
+
+	return data.Books, data.Readers, nil
+}
+
 func SaveBooksToCSV(filename string, books []*domain.Book) error {
 	file, err := os.Create(filename)
 	if err != nil {
@@ -20,7 +54,6 @@ func SaveBooksToCSV(filename string, books []*domain.Book) error {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	// Заголовок
 	header := []string{"ID", "Title", "Author", "Year", "IsIssued", "ReaderID"}
 	if err := writer.Write(header); err != nil {
 		return fmt.Errorf("ошибка записи заголовка: %w", err)
@@ -46,7 +79,6 @@ func SaveBooksToCSV(filename string, books []*domain.Book) error {
 	return nil
 }
 
-// LoadBooksFromCSV читает книги из CSV-файла
 func LoadBooksFromCSV(filename string) ([]*domain.Book, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -64,7 +96,6 @@ func LoadBooksFromCSV(filename string) ([]*domain.Book, error) {
 		return nil, fmt.Errorf("файл '%s' пуст или содержит только заголовок", filename)
 	}
 
-	// Пропускаем заголовок
 	books := make([]*domain.Book, 0, len(rows)-1)
 	for i, row := range rows[1:] {
 		if len(row) != 6 {

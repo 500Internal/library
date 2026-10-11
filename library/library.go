@@ -4,22 +4,20 @@ import (
 	"fmt"
 
 	"library-app/domain"
-	"library-app/storage"
 )
 
 type Library struct {
-	books   []*domain.Book
-	readers []*domain.Reader
+	Books   []*domain.Book
+	Readers []*domain.Reader
 
 	lastBookID   int
 	lastReaderID int
 }
 
-// New — фабричная функция Возвращает пустую библиотеку с не-nil слайсами
 func New() *Library {
 	return &Library{
-		books:   []*domain.Book{},
-		readers: []*domain.Reader{},
+		Books:   []*domain.Book{},
+		Readers: []*domain.Reader{},
 	}
 }
 
@@ -27,7 +25,7 @@ func (lib *Library) AddBook(title, author string, year int) (*domain.Book, error
 	if err := validateBook(title, author); err != nil {
 		return nil, err
 	}
-	for _, b := range lib.books {
+	for _, b := range lib.Books {
 		if b.Title == title && b.Author == author {
 			return nil, fmt.Errorf("книга '%s' автора '%s' уже есть в библиотеке", title, author)
 		}
@@ -39,12 +37,12 @@ func (lib *Library) AddBook(title, author string, year int) (*domain.Book, error
 		Author: author,
 		Year:   year,
 	}
-	lib.books = append(lib.books, book)
+	lib.Books = append(lib.Books, book)
 	return book, nil
 }
 
 func (lib *Library) AddReader(firstName, lastName string) (*domain.Reader, error) {
-	for _, r := range lib.readers {
+	for _, r := range lib.Readers {
 		if r.FirstName == firstName && r.LastName == lastName {
 			return nil, fmt.Errorf("читатель '%s %s' уже зарегистрирован", firstName, lastName)
 		}
@@ -56,12 +54,12 @@ func (lib *Library) AddReader(firstName, lastName string) (*domain.Reader, error
 		LastName:  lastName,
 		IsActive:  true,
 	}
-	lib.readers = append(lib.readers, reader)
+	lib.Readers = append(lib.Readers, reader)
 	return reader, nil
 }
 
 func (lib *Library) FindBookByID(id int) (*domain.Book, error) {
-	for _, book := range lib.books {
+	for _, book := range lib.Books {
 		if book.ID == id {
 			return book, nil
 		}
@@ -70,7 +68,7 @@ func (lib *Library) FindBookByID(id int) (*domain.Book, error) {
 }
 
 func (lib *Library) FindReaderByID(id int) (*domain.Reader, error) {
-	for _, reader := range lib.readers {
+	for _, reader := range lib.Readers {
 		if reader.ID == id {
 			return reader, nil
 		}
@@ -102,33 +100,27 @@ func (lib *Library) ReturnBook(bookID int) error {
 }
 
 func (lib *Library) GetAllBooks() []*domain.Book {
-	return lib.books
+	return lib.Books
 }
 
-// SaveToCSV — обертка над storage.SaveBooksToCSV
-func (lib *Library) SaveToCSV(filename string) error {
-	return storage.SaveBooksToCSV(filename, lib.books)
-}
-
-// LoadFromCSV — читает книги из файла и заменяет ими текущий список
-func (lib *Library) LoadFromCSV(filename string) error {
-	books, err := storage.LoadBooksFromCSV(filename)
-	if err != nil {
-		return err
-	}
-	lib.books = books
-
-	maxID := 0
-	for _, b := range books {
-		if b.ID > maxID {
-			maxID = b.ID
+func (lib *Library) UpdateIDs() {
+	maxBookID := 0
+	for _, book := range lib.Books {
+		if book.ID > maxBookID {
+			maxBookID = book.ID
 		}
 	}
-	lib.lastBookID = maxID
-	return nil
+	lib.lastBookID = maxBookID
+
+	maxReaderID := 0
+	for _, reader := range lib.Readers {
+		if reader.ID > maxReaderID {
+			maxReaderID = reader.ID
+		}
+	}
+	lib.lastReaderID = maxReaderID
 }
 
-// validateBook — вспомогательная функция, используется только внутри пакета
 func validateBook(title, author string) error {
 	if title == "" {
 		return fmt.Errorf("название книги не может быть пустым")

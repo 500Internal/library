@@ -1,0 +1,34 @@
+{
+  "books": [
+    {
+      "id": 1,
+      "title": "Война и мир",
+      "author": "Л. Толстой",
+      "year": 1869,
+      "is_issued": false,
+      "reader_id": 0
+    },
+    {
+      "id": 2,
+      "title": "Преступление и наказание",
+      "author": "Ф. Достоевский",
+      "year": 1866,
+      "is_issued": false,
+      "reader_id": 0
+    }
+  ],
+  "readers": [
+    {
+      "id": 1,
+      "first_name": "Иван",
+      "last_name": "Иванов",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "first_name": "Мария",
+      "last_name": "Петрова",
+      "is_active": false
+    }
+  ]
+}
